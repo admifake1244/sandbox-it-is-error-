@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox Physics Simulator - Falling Sand Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #gameCanvas {
+            border: 3px solid #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            background: #000;
+            display: block;
+            border-radius: 8px;
+            cursor: crosshair;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .control-panel {
+            background: rgba(30, 30, 50, 0.9);
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+            min-width: 250px;
+        }
+
+        .control-panel h2 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #b0b0b0;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #00d4ff, #0099ff);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00d4ff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00d4ff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+        }
+
+        .slider-value {
+            color: #00d4ff;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .material-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .material-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .material-grid::-webkit-scrollbar-track {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .material-grid::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .material-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.5);
+        }
+
+        .material-btn {
+            padding: 12px 10px;
+            border: 2px solid transparent;
+            background: rgba(0, 212, 255, 0.1);
+            color: #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .material-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .material-btn.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: 2px solid #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .stats {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.85em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #a0a0a0;
+        }
+
+        .stats-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats-value {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .material-preview {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .control-panel {
+                min-width: 100%;
+            }
+
+            #gameCanvas {
+                max-width: 100%;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .material-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 SANDBOX PHYSICS SIMULATOR</h1>
+            <p>Một mô phỏng vật lý falling sand game với phản ứng hóa học và vật lý tương tác</p>
+        </div>
+
+        <div class="main-content">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="control-panel">
+                <h2>🔧 Điều khiển</h2>
+
+                <div class="control-section">
+                    <label>Chọn vật liệu:</label>
+                    <div class="material-grid" id="materialGrid"></div>
+                </div>
+
+                <div class="control-section">
+                    <label for="brushSlider">Kích thước bút: <span class="slider-value" id="brushValue">10</span>px</label>
+                    <input type="range" id="brushSlider" min="1" max="50" value="10">
+                </div>
+
+                <div class="control-section">
+                    <label for="pixelSlider">Độ to ô lưới: <span class="slider-value" id="pixelValue">8</span>px</label>
+                    <input type="range" id="pixelSlider" min="2" max="16" value="8">
+                </div>
+
+                <div class="button-group">
+                    <button id="pauseBtn">⏸️ TẠM DỪNG</button>
+                    <button id="clearBtn">🗑️ XÓA</button>
+                    <button id="resetBtn" class="full-width">🔄 ĐẶT LẠI</button>
+                </div>
+
+                <div class="control-section">
+                    <label>👾 Sinh vật:</label>
+                    <div class="button-group">
+                        <button id="herbivoreBtn">🐛 Thêm ăn cỏ</button>
+                        <button id="carnivoreBtn">🦁 Thêm ăn thịt</button>
+                    </div>
+                </div>
+
+                <div class="control-section" style="margin-top: 20px;">
+                    <h3 style="color: #00d4ff; margin-bottom: 10px; font-size: 0.95em;">📊 Thống kê</h3>
+                    <div class="stats">
+                        <div class="stats-row">
+                            <span>FPS:</span>
+                            <span class="stats-value" id="fpsCounter">0</span>
+                        </div>
+                        <div class="stats-row">
+                            <span>Tổng hạt:</span>
+                            <span class="stats-value" id="particleCount">0</span>
+                        </div>
+                        <div class="stats-row">
+                            <span>Sinh vật:</span>
+                            <span class="stats-value" id="creatureCount">0</span>
+                        </div>
+                        <div class="stats-row">
+                            <span>Trạng thái:</span>
+                            <span class="stats-value" id="statusText">Chạy</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // PHẦN 1: CẤU HÌNH VÀ HẰNG SỐ
+        // ==========================================
+
+        /**
+         * Định nghĩa các loại vật liệu và tính chất của chúng
+         * Mỗi vật liệu có: tên, màu, loại (SOLID, LIQUID, GAS), độ mục (density)
+         */
+        const MATERIALS = {
+            EMPTY: { id: 0, name: 'Trống', color: '#000000', type: 'EMPTY', density: 0 },
+            WALL: { id: 1, name: 'Tường', color: '#666666', type: 'SOLID', density: 999 },
+            SAND: { id: 2, name: 'Cát', color: '#FFCC33', type: 'SOLID', density: 10 },
+            WATER: { id: 3, name: 'Nước', color: '#3399FF', type: 'LIQUID', density: 5 },
+            FIRE: { id: 4, name: 'Lửa', color: '#FF6600', type: 'GAS', density: -5 },
+            WOOD: { id: 5, name: 'Gỗ', color: '#8B4513', type: 'SOLID', density: 15 },
+            GUNPOWDER: { id: 6, name: 'Thuốc nổ', color: '#333333', type: 'SOLID', density: 8 },
+            ACID: { id: 7, name: 'Axit', color: '#00FF00', type: 'LIQUID', density: 6 },
+            STEAM: { id: 8, name: 'Hơi nước', color: '#CCCCCC', type: 'GAS', density: -8 },
+            DUST: { id: 9, name: 'Bụi', color: '#999999', type: 'SOLID', density: 7 },
+            STONE: { id: 10, name: 'Đá', color: '#808080', type: 'SOLID', density: 20 },
+            METAL: { id: 11, name: 'Kim loại', color: '#C0C0C0', type: 'SOLID', density: 25 },
+            GRASS: { id: 12, name: 'Cỏ', color: '#00AA00', type: 'SOLID', density: 3 },
+            LAVA: { id: 13, name: 'Dung nham', color: '#FF3300', type: 'LIQUID', density: 12 },
+            SLIME: { id: 14, name: 'Chất nhầy', color: '#66FF00', type: 'LIQUID', density: 9 },
+            SEED: { id: 15, name: 'Hạt', color: '#FF9900', type: 'SOLID', density: 8 },
+            FRUIT: { id: 16, name: 'Trái cây', color: '#FF1493', type: 'SOLID', density: 7 },
+            MEAT: { id: 17, name: 'Thịt', color: '#CC0000', type: 'SOLID', density: 9 },
+            PLANT: { id: 18, name: 'Cây', color: '#00CC00', type: 'SOLID', density: 4 }
+        };
+
+        // ==========================================
+        // PHẦN 2: CANVAS VÀ KHỞI TẠO GRID
+        // ==========================================
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        // Thiết lập kích thước canvas
+        const GRID_WIDTH = 160;
+        const GRID_HEIGHT = 100;
+        const PIXEL_SIZE = 8;
+
+        canvas.width = GRID_WIDTH * PIXEL_SIZE;
+        canvas.height = GRID_HEIGHT * PIXEL_SIZE;
+
+        // Tạo mảng 1D để lưu ID vật liệu (tối ưu hóa hiệu suất)
+        let grid = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
+        let gridTemperature = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
+        let gridAge = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
+
+        // ImageData để vẽ pixel trực tiếp
+        let imageData = ctx.createImageData(canvas.width, canvas.height);
+        let data = imageData.data;
+
+        // ==========================================
+        // PHẦN 3: TRẠNG THÁI GAME
+        // ==========================================
+
+        let gameState = {
+            isPaused: false,
+            selectedMaterial: MATERIALS.SAND,
+            brushSize: 10,
+            pixelSize: 8,
+            frameCount: 0,
+            fps: 0,
+            lastFpsTime: Date.now(),
+            particleCount: 0,
+            creatures: []
+        };
+
+        /**
+         * Lớp Creature - Đại diện cho sinh vật trong thế giới
+         */
+        class Creature {
+            constructor(x, y, type = 'herbivore') {
+                this.x = x;
+                this.y = y;
+                this.type = type; // 'herbivore' hoặc 'carnivore'
+                this.energy = 100;
+                this.age = 0;
+                this.maxEnergy = 150;
+                this.color = type === 'herbivore' ? '#FFFF00' : '#FF0000';
+                this.size = 2;
+            }
+
+            /**
+             * Cập nhật sinh vật - di chuyển, ăn, kiếp sống
+             */
+            update() {
+                this.age++;
+                this.energy -= 0.2; // Tiêu thụ năng lượng mỗi khung hình
+
+                // Sinh vật chết nếu hết năng lượng hoặc quá già
+                if (this.energy <= 0 || this.age > 1000) {
+                    return false; // Đánh dấu để xóa
+                }
+
+                // Tìm kiếm thức ăn hoặc con mồi gần đó
+                const target = this.findTarget();
+                if (target) {
+                    this.moveTowards(target.x, target.y);
+                    this.tryEat(target);
+                } else {
+                    // Chuyển động ngẫu nhiên
+                    this.randomWalk();
+                }
+
+                // Sinh vật có thể sinh sản nếu có đủ năng lượng
+                if (this.energy > 120 && Math.random() < 0.01) {
+                    return 'reproduce'; // Tín hiệu sinh sản
+                }
+
+                return true; // Vẫn sống
+            }
+
+            /**
+             * Tìm kiếm thức ăn hoặc con mồi gần đó
+             */
+            findTarget() {
+                const searchRadius = 8;
+                let nearest = null;
+                let nearestDist = searchRadius;
+
+                for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+                    for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+                        const nx = Math.floor(this.x) + dx;
+                        const ny = Math.floor(this.y) + dy;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < nearestDist) {
+                            const mat = getMaterial(nx, ny);
+
+                            if (this.type === 'herbivore') {
+                                // Ăn cỏ, cây, trái cây, hạt
+                                if (mat.id === MATERIALS.GRASS.id ||
+                                    mat.id === MATERIALS.PLANT.id ||
+                                    mat.id === MATERIALS.FRUIT.id ||
+                                    mat.id === MATERIALS.SEED.id) {
+                                    nearest = { x: nx, y: ny, mat: mat };
+                                    nearestDist = dist;
+                                }
+                            } else {
+                                // Ăn thịt và cỏ
+                                if (mat.id === MATERIALS.MEAT.id) {
+                                    nearest = { x: nx, y: ny, mat: mat };
+                                    nearestDist = dist;
+                                }
+                                // Tìm sinh vật ăn cỏ gần đó
+                                for (let creature of gameState.creatures) {
+                                    if (creature !== this && creature.type === 'herbivore') {
+                                        const creatDist = Math.sqrt(
+                                            Math.pow(creature.x - this.x, 2) +
+                                            Math.pow(creature.y - this.y, 2)
+                                        );
+                                        if (creatDist < nearestDist) {
+                                            nearest = { x: creature.x, y: creature.y, creature: creature };
+                                            nearestDist = creatDist;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return nearest;
+            }
+
+            /**
+             * Di chuyển về phía mục tiêu
+             */
+            moveTowards(targetX, targetY) {
+                const dx = targetX - this.x;
+                const dy = targetY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 0) {
+                    const moveSpeed = 0.5;
+                    this.x += (dx / dist) * moveSpeed;
+                    this.y += (dy / dist) * moveSpeed;
+
+                    // Giới hạn trong canvas
+                    this.x = Math.max(0, Math.min(GRID_WIDTH - 1, this.x));
+                    this.y = Math.max(0, Math.min(GRID_HEIGHT - 1, this.y));
+                }
+            }
+
+            /**
+             * Chuyển động ngẫu nhiên
+             */
+            randomWalk() {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 0.3;
+                this.x += Math.cos(angle) * speed;
+                this.y += Math.sin(angle) * speed;
+
+                // Giới hạn trong canvas
+                this.x = Math.max(0, Math.min(GRID_WIDTH - 1, this.x));
+                this.y = Math.max(0, Math.min(GRID_HEIGHT - 1, this.y));
+            }
+
+            /**
+             * Cố gắng ăn thức ăn
+             */
+            tryEat(target) {
+                const dist = Math.sqrt(
+                    Math.pow(target.x - this.x, 2) +
+                    Math.pow(target.y - this.y, 2)
+                );
+
+                if (dist < 1.5) {
+                    if (target.mat) {
+                        // Ăn vật liệu
+                        const eatAmount = this.type === 'herbivore' ? 15 : 30;
+                        this.energy = Math.min(this.maxEnergy, this.energy + eatAmount);
+                        setMaterial(target.x, target.y, MATERIALS.EMPTY);
+                    } else if (target.creature) {
+                        // Ăn sinh vật
+                        this.energy = Math.min(this.maxEnergy, this.energy + 50);
+                        target.creature.energy = 0; // Sinh vật bị ăn chết
+                    }
+                }
+            }
+
+            /**
+             * Vẽ sinh vật lên canvas
+             */
+            draw(ctx, pixelSize) {
+                const rgb = hexToRgb(this.color);
+                const canvasX = this.x * pixelSize;
+                const canvasY = this.y * pixelSize;
+                const drawSize = this.size * pixelSize;
+
+                ctx.fillStyle = this.color;
+                ctx.fillRect(
+                    canvasX - drawSize / 2,
+                    canvasY - drawSize / 2,
+                    drawSize,
+                    drawSize
+                );
+
+                // Vẽ năng lượng dưới dạng thanh
+                const healthPercent = this.energy / this.maxEnergy;
+                ctx.fillStyle = healthPercent > 0.5 ? '#00FF00' : '#FF6600';
+                ctx.fillRect(
+                    canvasX - drawSize / 2,
+                    canvasY + drawSize / 2 + 1,
+                    drawSize * healthPercent,
+                    1
+                );
+            }
+        }
+
+        // ==========================================
+        // PHẦN 4: HÀM TIỆN ÍCH - GRID OPERATIONS
+        // ==========================================
+
+        /**
+         * Lấy chỉ số trong mảng 1D từ tọa độ x, y
+         */
+        function getIndex(x, y) {
+            if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return -1;
+            return y * GRID_WIDTH + x;
+        }
+
+        /**
+         * Lấy vật liệu tại vị trí (x, y)
+         */
+        function getMaterial(x, y) {
+            const idx = getIndex(x, y);
+            if (idx === -1) return MATERIALS.EMPTY;
+            return getMaterialById(grid[idx]);
+        }
+
+        /**
+         * Lấy object vật liệu từ ID
+         */
+        function getMaterialById(id) {
+            for (let key in MATERIALS) {
+                if (MATERIALS[key].id === id) return MATERIALS[key];
+            }
+            return MATERIALS.EMPTY;
+        }
+
+        /**
+         * Đặt vật liệu tại vị trí (x, y)
+         */
+        function setMaterial(x, y, material) {
+            const idx = getIndex(x, y);
+            if (idx === -1) return;
+            
+            const oldMaterial = getMaterialById(grid[idx]);
+            if (oldMaterial.id !== material.id) {
+                grid[idx] = material.id;
+                gridTemperature[idx] = 0;
+                gridAge[idx] = 0;
+            }
+        }
+
+        /**
+         * Kiểm tra xem vị trí có trống hay không
+         */
+        function isEmpty(x, y) {
+            const mat = getMaterial(x, y);
+            return mat.id === MATERIALS.EMPTY.id;
+        }
+
+        /**
+         * Hoán đổi hai vị trí
+         */
+        function swap(x1, y1, x2, y2) {
+            const idx1 = getIndex(x1, y1);
+            const idx2 = getIndex(x2, y2);
+            if (idx1 === -1 || idx2 === -1) return;
+
+            const temp = grid[idx1];
+            grid[idx1] = grid[idx2];
+            grid[idx2] = temp;
+
+            const tempTemp = gridTemperature[idx1];
+            gridTemperature[idx1] = gridTemperature[idx2];
+            gridTemperature[idx2] = tempTemp;
+        }
+
+        /**
+         * Xóa toàn bộ grid
+         */
+        function clearGrid() {
+            grid.fill(MATERIALS.EMPTY.id);
+            gridTemperature.fill(0);
+            gridAge.fill(0);
+        }
+
+        // ==========================================
+        // PHẦN 5: VẬT LÝ HẠT - PHYSICS ENGINE
+        // ==========================================
+
+        /**
+         * Cập nhật vật lý cho một hạt tại vị trí (x, y)
+         * Hàm này xử lý hành vi của từng loại vật liệu
+         */
+        function updateParticle(x, y) {
+            const material = getMaterial(x, y);
+            if (material.id === MATERIALS.EMPTY.id) return;
+
+            // Tuổi của hạt tăng lên
+            const idx = getIndex(x, y);
+            gridAge[idx]++;
+
+            // Xử lý từng loại vật liệu
+            switch (material.id) {
+                case MATERIALS.SAND.id:
+                    updateSand(x, y);
+                    break;
+                case MATERIALS.WATER.id:
+                    updateWater(x, y);
+                    break;
+                case MATERIALS.FIRE.id:
+                    updateFire(x, y);
+                    break;
+                case MATERIALS.WOOD.id:
+                    updateWood(x, y);
+                    break;
+                case MATERIALS.GUNPOWDER.id:
+                    updateGunpowder(x, y);
+                    break;
+                case MATERIALS.ACID.id:
+                    updateAcid(x, y);
+                    break;
+                case MATERIALS.STEAM.id:
+                    updateSteam(x, y);
+                    break;
+                case MATERIALS.DUST.id:
+                    updateDust(x, y);
+                    break;
+                case MATERIALS.STONE.id:
+                    updateStone(x, y);
+                    break;
+                case MATERIALS.METAL.id:
+                    updateMetal(x, y);
+                    break;
+                case MATERIALS.GRASS.id:
+                    updateGrass(x, y);
+                    break;
+                case MATERIALS.LAVA.id:
+                    updateLava(x, y);
+                    break;
+                case MATERIALS.SLIME.id:
+                    updateSlime(x, y);
+                    break;
+                case MATERIALS.SEED.id:
+                    updateSeed(x, y);
+                    break;
+                case MATERIALS.FRUIT.id:
+                    updateFruit(x, y);
+                    break;
+                case MATERIALS.MEAT.id:
+                    updateMeat(x, y);
+                    break;
+                case MATERIALS.PLANT.id:
+                    updatePlant(x, y);
+                    break;
+            }
+        }
+
+        /**
+         * CẬP NHẬT CÁT
+         * Hành vi: Rơi xuống trực tiếp
+         */
+        function updateSand(x, y) {
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Nếu không thể rơi, thử chảy sang các hướng
+            const directions = [
+                { x: -1, y: 1 }, // Chéo trái dưới
+                { x: 1, y: 1 }   // Chéo phải dưới
+            ];
+
+            // Xáo trộn để tránh dòng chảy lệch hướng
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT NƯỚC
+         * Hành vi: Rơi xuống, chảy sang hai bên
+         */
+        function updateWater(x, y) {
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Thử chảy sang hai bên
+            const directions = [
+                { x: -1, y: 0 }, // Trái
+                { x: 1, y: 0 },  // Phải
+                { x: -2, y: 0 }, // Trái xa
+                { x: 2, y: 0 }   // Phải xa
+            ];
+
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT LỬA
+         * Hành vi: Bay lên, biến mất theo thời gian, đốt cháy vật liệu
+         */
+        function updateFire(x, y) {
+            const idx = getIndex(x, y);
+
+            // Lửa mất theo thời gian (khoảng 50 frame)
+            if (gridAge[idx] > 50 || Math.random() < 0.05) {
+                setMaterial(x, y, MATERIALS.EMPTY);
+                return;
+            }
+
+            // Lửa bay lên
+            if (y - 1 >= 0 && isEmpty(x, y - 1)) {
+                swap(x, y, x, y - 1);
+                return;
+            }
+
+            // Lửa lan sang các hạt dễ cháy gần đó
+            const spreadDistance = 2;
+            for (let dx = -spreadDistance; dx <= spreadDistance; dx++) {
+                for (let dy = -spreadDistance; dy <= spreadDistance; dy++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    const neighborMat = getMaterial(nx, ny);
+
+                    // Đốt cháy gỗ, thuốc nổ
+                    if ((neighborMat.id === MATERIALS.WOOD.id || 
+                         neighborMat.id === MATERIALS.GUNPOWDER.id) && 
+                        Math.random() < 0.1) {
+                        setMaterial(nx, ny, MATERIALS.FIRE);
+                    }
+                }
+            }
+
+            // Nước dập tắt lửa
+            if (getMaterial(x, y - 1).id === MATERIALS.WATER.id ||
+                getMaterial(x, y + 1).id === MATERIALS.WATER.id ||
+                getMaterial(x - 1, y).id === MATERIALS.WATER.id ||
+                getMaterial(x + 1, y).id === MATERIALS.WATER.id) {
+                if (Math.random() < 0.3) {
+                    setMaterial(x, y, MATERIALS.EMPTY);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT GỖ
+         * Hành vi: Cố định, bị lửa đốt
+         */
+        function updateWood(x, y) {
+            // Gỗ không chuyển động, chỉ bị đốt
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.FIRE.id && Math.random() < 0.3) {
+                    setMaterial(x, y, MATERIALS.FIRE);
+                    break;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT THUỐC NỔ
+         * Hành vi: Nổ tung khi tiếp xúc với lửa hoặc nhiệt độ cao
+         */
+        function updateGunpowder(x, y) {
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            // Kiểm tra xem có lửa gần không
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.FIRE.id) {
+                    explode(x, y);
+                    return;
+                }
+            }
+
+            // Nếu không nổ, hành động giống cát
+            updateSand(x, y);
+        }
+
+        /**
+         * HIỆU ỨNG NỔ
+         * Tạo ra lửa và xóa các hạt xung quanh
+         */
+        function explode(cx, cy) {
+            const radius = 8;
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    const nx = cx + dx;
+                    const ny = cy + dy;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= radius) {
+                        const mat = getMaterial(nx, ny);
+                        if (mat.id !== MATERIALS.WALL.id) {
+                            if (distance < radius * 0.6) {
+                                setMaterial(nx, ny, MATERIALS.FIRE);
+                            } else if (Math.random() < 0.3) {
+                                setMaterial(nx, ny, MATERIALS.FIRE);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT AXIT
+         * Hành vi: Chảy như nước, ăn mòn các vật liệu
+         */
+        function updateAcid(x, y) {
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Ăn mòn vật liệu xung quanh
+            const surroundings = [
+                { x: -1, y: 0 }, { x: 1, y: 0 },
+                { x: 0, y: -1 }, { x: 0, y: 1 }
+            ];
+
+            for (let pos of surroundings) {
+                const nx = x + pos.x;
+                const ny = y + pos.y;
+                const mat = getMaterial(nx, ny);
+                
+                // Axit ăn mòn gỗ, cát, bụi nhưng không ăn mòn tường
+                if ((mat.id === MATERIALS.WOOD.id || 
+                     mat.id === MATERIALS.SAND.id ||
+                     mat.id === MATERIALS.DUST.id) && 
+                    Math.random() < 0.15) {
+                    setMaterial(nx, ny, MATERIALS.ACID);
+                }
+            }
+
+            // Chảy sang hai bên
+            const directions = [
+                { x: -1, y: 0 }, { x: 1, y: 0 }
+            ];
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT HƠI NƯỚC
+         * Hành vi: Bay lên, khuếch tán, có thể ngưng tụ lại
+         */
+        function updateSteam(x, y) {
+            const idx = getIndex(x, y);
+
+            // Hơi nước bay lên
+            if (y - 1 >= 0 && isEmpty(x, y - 1)) {
+                swap(x, y, x, y - 1);
+                return;
+            }
+
+            // Khuếch tán ngẫu nhiên
+            const directions = [
+                { x: -1, y: -1 }, { x: 1, y: -1 },
+                { x: -1, y: 0 }, { x: 1, y: 0 }
+            ];
+
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+
+            // Hơi nước biến mất sau một thời gian
+            if (gridAge[idx] > 80 || Math.random() < 0.02) {
+                setMaterial(x, y, MATERIALS.EMPTY);
+            }
+        }
+
+        /**
+         * CẬP NHẬT BỤI
+         * Hành vi: Rơi nhanh hơn cát, khuếch tán
+         */
+        function updateDust(x, y) {
+            // Thử rơi xuống (nhanh hơn cát)
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+            if (y + 2 < GRID_HEIGHT && isEmpty(x, y + 2) && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 2);
+                return;
+            }
+
+            // Khuếch tán
+            const directions = [
+                { x: -1, y: 1 }, { x: 1, y: 1 },
+                { x: -1, y: 0 }, { x: 1, y: 0 }
+            ];
+
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT ĐÁ
+         * Hành vi: Rơi xuống như cát, nhưng nặng hơn và không bị axit ăn mòn
+         */
+        function updateStone(x, y) {
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Nếu không thể rơi, thử chảy sang các hướng
+            const directions = [
+                { x: -1, y: 1 }, // Chéo trái dưới
+                { x: 1, y: 1 }   // Chéo phải dưới
+            ];
+
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                const neighborMat = getMaterial(nx, ny);
+                // Đá chỉ chuyển động vào ô trống hoặc qua nước/acid
+                if (isEmpty(nx, ny) || neighborMat.id === MATERIALS.WATER.id || 
+                    neighborMat.id === MATERIALS.ACID.id || neighborMat.id === MATERIALS.LAVA.id) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT KIM LOẠI
+         * Hành vi: Rơi như cát, có thể bị ăn mòn bởi axit
+         */
+        function updateMetal(x, y) {
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Kiểm tra axit gần đó
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.ACID.id && Math.random() < 0.2) {
+                    setMaterial(x, y, MATERIALS.ACID);
+                    return;
+                }
+            }
+
+            // Chảy sang hai bên
+            const directions = [
+                { x: -1, y: 1 }, // Chéo trái dưới
+                { x: 1, y: 1 }   // Chéo phải dưới
+            ];
+
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT CỎ
+         * Hành vi: Nhẹ, rơi chậm, có thể bị lửa đốt
+         */
+        function updateGrass(x, y) {
+            const idx = getIndex(x, y);
+
+            // Nếu rơi nhanh, cỏ sẽ mất nước
+            if (Math.random() < 0.02) {
+                setMaterial(x, y, MATERIALS.DUST);
+                return;
+            }
+
+            // Thử rơi xuống (chậm)
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1) && Math.random() < 0.5) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Kiểm tra lửa gần đó
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.FIRE.id && Math.random() < 0.3) {
+                    setMaterial(x, y, MATERIALS.FIRE);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT DUNG NHAM
+         * Hành vi: Chất lỏng nóng, chảy như nước nhưng chậm hơn, đốt cháy cây
+         */
+        function updateLava(x, y) {
+            const idx = getIndex(x, y);
+
+            // Dung nham rơi chậm hơn nước
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Dung nham bay hơi thành hơi nước theo thời gian
+            if (gridAge[idx] > 100 && Math.random() < 0.1) {
+                setMaterial(x, y, MATERIALS.STEAM);
+                return;
+            }
+
+            // Chảy sang hai bên (chậm hơn nước)
+            if (Math.random() < 0.6) {
+                const directions = [
+                    { x: -1, y: 0 }, { x: 1, y: 0 }
+                ];
+
+                if (Math.random() > 0.5) directions.reverse();
+
+                for (let dir of directions) {
+                    const nx = x + dir.x;
+                    const ny = y + dir.y;
+                    if (isEmpty(nx, ny)) {
+                        swap(x, y, nx, ny);
+                        return;
+                    }
+                }
+            }
+
+            // Đốt cháy gỗ gần đó
+            const spreadDistance = 1;
+            for (let dx = -spreadDistance; dx <= spreadDistance; dx++) {
+                for (let dy = -spreadDistance; dy <= spreadDistance; dy++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    const neighborMat = getMaterial(nx, ny);
+
+                    if ((neighborMat.id === MATERIALS.WOOD.id || 
+                         neighborMat.id === MATERIALS.GRASS.id) && 
+                        Math.random() < 0.2) {
+                        setMaterial(nx, ny, MATERIALS.FIRE);
+                    }
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT CHẤT NHẦY
+         * Hành vi: Chất lỏng bền, chảy chậm, có thể ăn mòn một số vật liệu
+         */
+        function updateSlime(x, y) {
+            // Thử rơi xuống (chậm)
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1) && Math.random() < 0.3) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Ăn mòn bụi và cỏ
+            const surroundings = [
+                { x: -1, y: 0 }, { x: 1, y: 0 },
+                { x: 0, y: -1 }, { x: 0, y: 1 }
+            ];
+
+            for (let pos of surroundings) {
+                const nx = x + pos.x;
+                const ny = y + pos.y;
+                const mat = getMaterial(nx, ny);
+                
+                if ((mat.id === MATERIALS.DUST.id || 
+                     mat.id === MATERIALS.GRASS.id) && 
+                    Math.random() < 0.1) {
+                    setMaterial(nx, ny, MATERIALS.SLIME);
+                }
+            }
+
+            // Chảy sang hai bên (chậm)
+            if (Math.random() < 0.4) {
+                const directions = [
+                    { x: -1, y: 0 }, { x: 1, y: 0 }
+                ];
+
+                if (Math.random() > 0.5) directions.reverse();
+
+                for (let dir of directions) {
+                    const nx = x + dir.x;
+                    const ny = y + dir.y;
+                    if (isEmpty(nx, ny)) {
+                        swap(x, y, nx, ny);
+                        return;
+                    }
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT HẠT
+         * Hành vi: Rơi xuống, mọc thành cây nếu có nước
+         */
+        function updateSeed(x, y) {
+            const idx = getIndex(x, y);
+
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Nếu chạm nước hoặc đất, có thể mọc thành cây
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if ((neighbor.id === MATERIALS.WATER.id || 
+                     neighbor.id === MATERIALS.SAND.id ||
+                     neighbor.id === MATERIALS.GRASS.id) && 
+                    Math.random() < 0.05) {
+                    setMaterial(x, y, MATERIALS.PLANT);
+                    break;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT TRÁ CAY
+         * Hành vi: Rơi xuống, bị thiêu với lửa
+         */
+        function updateFruit(x, y) {
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Bị thiêu bởi lửa
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.FIRE.id && Math.random() < 0.3) {
+                    setMaterial(x, y, MATERIALS.FIRE);
+                    return;
+                }
+            }
+
+            // Chảy sang hai bên nếu trên nước
+            const directions = [
+                { x: -1, y: 1 }, { x: 1, y: 1 }
+            ];
+
+            if (Math.random() > 0.5) directions.reverse();
+
+            for (let dir of directions) {
+                const nx = x + dir.x;
+                const ny = y + dir.y;
+                if (isEmpty(nx, ny)) {
+                    swap(x, y, nx, ny);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT THỊT
+         * Hành vi: Rơi xuống, tự phân hủy theo thời gian
+         */
+        function updateMeat(x, y) {
+            const idx = getIndex(x, y);
+
+            // Thử rơi xuống
+            if (y + 1 < GRID_HEIGHT && isEmpty(x, y + 1)) {
+                swap(x, y, x, y + 1);
+                return;
+            }
+
+            // Thịt tự phân hủy thành bụi
+            if (gridAge[idx] > 200 || Math.random() < 0.02) {
+                setMaterial(x, y, MATERIALS.DUST);
+                return;
+            }
+
+            // Bị thiêu bởi lửa
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.FIRE.id && Math.random() < 0.3) {
+                    setMaterial(x, y, MATERIALS.FIRE);
+                    return;
+                }
+            }
+        }
+
+        /**
+         * CẬP NHẬT CÂY
+         * Hành vi: Phát triển, tạo hoa quả, bị thiêu, bị ăn
+         */
+        function updatePlant(x, y) {
+            const idx = getIndex(x, y);
+
+            // Phát triển theo thời gian - tạo hoa quả
+            if (gridAge[idx] > 50 && Math.random() < 0.05) {
+                const positions = [
+                    { x: -1, y: 0 }, { x: 1, y: 0 },
+                    { x: 0, y: -1 }, { x: 0, y: 1 }
+                ];
+
+                for (let pos of positions) {
+                    const nx = x + pos.x;
+                    const ny = y + pos.y;
+                    if (isEmpty(nx, ny)) {
+                        setMaterial(nx, ny, Math.random() < 0.7 ? MATERIALS.FRUIT : MATERIALS.SEED);
+                        return;
+                    }
+                }
+            }
+
+            // Bị thiêu bởi lửa
+            const neighbors = [
+                getMaterial(x - 1, y),
+                getMaterial(x + 1, y),
+                getMaterial(x, y - 1),
+                getMaterial(x, y + 1)
+            ];
+
+            for (let neighbor of neighbors) {
+                if (neighbor.id === MATERIALS.FIRE.id && Math.random() < 0.3) {
+                    setMaterial(x, y, MATERIALS.FIRE);
+                    return;
+                }
+            }
+
+            // Chết nếu quá cũ
+            if (gridAge[idx] > 500) {
+                setMaterial(x, y, MATERIALS.DUST);
+            }
+        }
+
+        // ==========================================
+        // PHẦN 6: VÔ EM - RENDERING
+        // ==========================================
+
+        /**
+         * Vẽ toàn bộ grid lên canvas
+         * Sử dụng ImageData để ghi đè pixel trực tiếp (tối ưu hóa hiệu suất)
+         */
+        function renderGrid() {
+            // Vẽ từng hạt
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const material = getMaterial(x, y);
+                    const color = material.color;
+
+                    // Chuyển đổi màu hex thành RGB
+                    const rgb = hexToRgb(color);
+
+                    // Vẽ hình vuông pixel_size x pixel_size cho mỗi hạt
+                    for (let py = 0; py < gameState.pixelSize; py++) {
+                        for (let px = 0; px < gameState.pixelSize; px++) {
+                            const canvasX = x * gameState.pixelSize + px;
+                            const canvasY = y * gameState.pixelSize + py;
+                            const pixelIdx = (canvasY * canvas.width + canvasX) * 4;
+
+                            data[pixelIdx] = rgb.r;
+                            data[pixelIdx + 1] = rgb.g;
+                            data[pixelIdx + 2] = rgb.b;
+                            data[pixelIdx + 3] = 255;
+                        }
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        /**
+         * Chuyển đổi mã màu hex sang RGB
+         */
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        // ==========================================
+        // PHẦN 7: VÒ LẶP CẬP NHẬT - UPDATE LOOP
+        // ==========================================
+
+        /**
+         * Cập nhật tất cả hạt theo thuật toán cellular automata
+         * Duyệt từ dưới lên trên để tránh các hạt rơi hai lần trong một frame
+         */
+        function updateSimulation() {
+            if (gameState.isPaused) return;
+
+            // Duyệt từ dưới lên trên (để tránh các hạt rơi hai lần)
+            for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
+                // Duyệt từ phải sang trái hoặc trái sang phải ngẫu nhiên
+                // để tránh hiện tượng dòng chảy lệch hướng
+                const useReverse = Math.random() > 0.5;
+                
+                if (useReverse) {
+                    for (let x = GRID_WIDTH - 1; x >= 0; x--) {
+                        updateParticle(x, y);
+                    }
+                } else {
+                    for (let x = 0; x < GRID_WIDTH; x++) {
+                        updateParticle(x, y);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Đếm số lượng hạt không trống
+         */
+        function countParticles() {
+            let count = 0;
+            for (let i = 0; i < grid.length; i++) {
+                if (grid[i] !== MATERIALS.EMPTY.id) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /**
+         * Cập nhật tất cả sinh vật
+         */
+        function updateCreatures() {
+            if (gameState.isPaused) return;
+
+            // Cập nhật từng sinh vật
+            const toAdd = [];
+            gameState.creatures = gameState.creatures.filter(creature => {
+                const alive = creature.update();
+                if (alive === 'reproduce') {
+                    // Sinh sản - tạo con mới
+                    const child = new Creature(
+                        creature.x + (Math.random() - 0.5) * 2,
+                        creature.y + (Math.random() - 0.5) * 2,
+                        creature.type
+                    );
+                    child.energy = creature.energy / 2;
+                    creature.energy = creature.energy / 2;
+                    toAdd.push(child);
+                    return true;
+                }
+                return alive === true; // Vẫn sống hoặc mới sinh sản
+            });
+
+            gameState.creatures.push(...toAdd);
+
+            // Giới hạn số lượng sinh vật
+            if (gameState.creatures.length > 200) {
+                gameState.creatures = gameState.creatures.slice(0, 200);
+            }
+        }
+
+        /**
+         * Vẽ tất cả sinh vật
+         */
+        function renderCreatures() {
+            for (let creature of gameState.creatures) {
+                creature.draw(ctx, gameState.pixelSize);
+            }
+        }
+
+        /**
+         * Tạo sinh vật mới
+         */
+        function spawnCreature(type) {
+            const x = Math.random() * GRID_WIDTH;
+            const y = Math.random() * GRID_HEIGHT;
+            gameState.creatures.push(new Creature(x, y, type));
+        }
+
+        /**
+         * Tạo một vài thức ăn ngẫu nhiên
+         */
+        function spawnFood() {
+            const x = Math.floor(Math.random() * GRID_WIDTH);
+            const y = Math.floor(Math.random() * GRID_HEIGHT);
+            const foodType = [MATERIALS.GRASS, MATERIALS.PLANT, MATERIALS.FRUIT][
+                Math.floor(Math.random() * 3)
+            ];
+            if (isEmpty(x, y)) {
+                setMaterial(x, y, foodType);
+            }
+        }
+
+        // ==========================================
+        // PHẦN 8: VÒNG CHÍNH - MAIN GAME LOOP
+        // ==========================================
+
+        /**
+         * Vòng lặp chính của trò chơi
+         * Chạy ở 60 FPS sử dụng requestAnimationFrame
+         */
+        function gameLoop() {
+            updateSimulation();
+            updateCreatures();
+            renderGrid();
+            renderCreatures();
+
+            // Tạo thức ăn ngẫu nhiên
+            if (Math.random() < 0.1) {
+                spawnFood();
+            }
+
+            gameState.frameCount++;
+            const now = Date.now();
+            if (now - gameState.lastFpsTime >= 1000) {
+                gameState.fps = gameState.frameCount;
+                gameState.frameCount = 0;
+                gameState.lastFpsTime = now;
+
+                // Cập nhật thống kê
+                gameState.particleCount = countParticles();
+                document.getElementById('fpsCounter').textContent = gameState.fps;
+                document.getElementById('particleCount').textContent = gameState.particleCount;
+                document.getElementById('creatureCount').textContent = gameState.creatures.length;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==========================================
+        // PHẦN 9: XỬ LÝ INPUT - INPUT HANDLING
+        // ==========================================
+
+        /**
+         * Vẽ vật liệu lên canvas khi người dùng click chuột
+         */
+        function drawMaterial(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / gameState.pixelSize);
+            const y = Math.floor((e.clientY - rect.top) / gameState.pixelSize);
+
+            // Vẽ một hình tròn với bán kính = brushSize
+            const radius = gameState.brushSize;
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    if (dx * dx + dy * dy <= radius * radius) {
+                        setMaterial(x + dx, y + dy, gameState.selectedMaterial);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Xử lý kéo chuột để vẽ liên tục
+         */
+        let isMouseDown = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            drawMaterial(e);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                drawMaterial(e);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        // Hỗ trợ touch cho điện thoại
+        canvas.addEventListener('touchstart', (e) => {
+            isMouseDown = true;
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isMouseDown) {
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isMouseDown = false;
+        });
+
+        /**
+         * Thay đổi kích thước ô lưới và resize canvas
+         */
+        function resizeCanvas() {
+            canvas.width = GRID_WIDTH * gameState.pixelSize;
+            canvas.height = GRID_HEIGHT * gameState.pixelSize;
+            imageData = ctx.createImageData(canvas.width, canvas.height);
+            data = imageData.data;
+        }
+
+        /**
+         * Đặt lại mô phỏng - xóa hết dữ liệu
+         */
+        function resetSimulation() {
+            if (confirm('Bạn có chắc chắn muốn đặt lại mô phỏng? (Xóa tất cả dữ liệu)')) {
+                clearGrid();
+                gameState.creatures = [];
+                gameState.isPaused = false;
+                gameState.frameCount = 0;
+                document.getElementById('pauseBtn').textContent = '⏸️ TẠM DỪNG';
+                document.getElementById('statusText').textContent = 'Chạy';
+            }
+        }
+
+        // ==========================================
+        // PHẦN 10: UI CONTROLS - ĐIỀU KHIỂN GIAO DIỆN
+        // ==========================================
+
+        /**
+         * Tạo grid các nút chọn vật liệu
+         */
+        function createMaterialButtons() {
+            const grid = document.getElementById('materialGrid');
+            grid.innerHTML = '';
+
+            const materialList = [
+                MATERIALS.SAND,
+                MATERIALS.WATER,
+                MATERIALS.FIRE,
+                MATERIALS.WOOD,
+                MATERIALS.GUNPOWDER,
+                MATERIALS.ACID,
+                MATERIALS.STEAM,
+                MATERIALS.DUST,
+                MATERIALS.STONE,
+                MATERIALS.METAL,
+                MATERIALS.GRASS,
+                MATERIALS.LAVA,
+                MATERIALS.SLIME,
+                MATERIALS.SEED,
+                MATERIALS.FRUIT,
+                MATERIALS.MEAT,
+                MATERIALS.PLANT,
+                MATERIALS.WALL
+            ];
+
+            materialList.forEach(material => {
+                const btn = document.createElement('button');
+                btn.className = 'material-btn';
+                if (material.id === gameState.selectedMaterial.id) {
+                    btn.classList.add('active');
+                }
+
+                btn.innerHTML = `
+                    <div class="material-preview" style="background-color: ${material.color};"></div>
+                    ${material.name}
+                `;
+
+                btn.addEventListener('click', () => {
+                    gameState.selectedMaterial = material;
+                    
+                    // Cập nhật UI
+                    document.querySelectorAll('.material-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+
+                grid.appendChild(btn);
+            });
+        }
+
+        /**
+         * Xử lý slider kích thước bút
+         */
+        document.getElementById('brushSlider').addEventListener('input', (e) => {
+            gameState.brushSize = parseInt(e.target.value);
+            document.getElementById('brushValue').textContent = gameState.brushSize;
+        });
+
+        /**
+         * Xử lý slider độ to ô lưới
+         */
+        document.getElementById('pixelSlider').addEventListener('input', (e) => {
+            gameState.pixelSize = parseInt(e.target.value);
+            document.getElementById('pixelValue').textContent = gameState.pixelSize;
+            resizeCanvas();
+        });
+
+        /**
+         * Nút tạm dừng
+         */
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            gameState.isPaused = !gameState.isPaused;
+            document.getElementById('pauseBtn').textContent = gameState.isPaused ? '▶️ TIẾP TỤC' : '⏸️ TẠM DỪNG';
+            document.getElementById('statusText').textContent = gameState.isPaused ? 'Tạm dừng' : 'Chạy';
+        });
+
+        /**
+         * Nút xóa
+         */
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ màn hình?')) {
+                clearGrid();
+            }
+        });
+
+        /**
+         * Nút đặt lại
+         */
+        document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+
+        /**
+         * Nút thêm sinh vật ăn cỏ
+         */
+        document.getElementById('herbivoreBtn').addEventListener('click', () => {
+            for (let i = 0; i < 3; i++) {
+                spawnCreature('herbivore');
+            }
+        });
+
+        /**
+         * Nút thêm sinh vật ăn thịt
+         */
+        document.getElementById('carnivoreBtn').addEventListener('click', () => {
+            for (let i = 0; i < 2; i++) {
+                spawnCreature('carnivore');
+            }
+        });
+
+        // ==========================================
+        // PHẦN 11: KHỞI ĐỘNG TRƯƠNG
+        // ==========================================
+
+        function init() {
+            createMaterialButtons();
+            gameLoop();
+
+            // Thêm một số tường ở cạnh để giới hạn phạm vi
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                setMaterial(0, y, MATERIALS.WALL);
+                setMaterial(GRID_WIDTH - 1, y, MATERIALS.WALL);
+            }
+
+            // Tạo một số thức ăn ban đầu
+            for (let i = 0; i < 10; i++) {
+                spawnFood();
+            }
+        }
+
+        // Khởi động ứng dụng khi DOM tải xong
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
